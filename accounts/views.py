@@ -1,5 +1,6 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login
 from django.shortcuts import render
+from django.shortcuts import render, redirect
 from rest_framework import generics, status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -21,11 +22,13 @@ class SignUpView(generics.GenericAPIView):
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
-            response = {"message": "User Created Successfully", "data": serializer.data}
-            
+            response = {"message": "User Created Successfully",
+                        "data": serializer.data}
+
             return Response(data=response, status=status.HTTP_201_CREATED)
-        
+
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LoginView(APIView):
     permission_classes = []
@@ -34,15 +37,19 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             tokens = serializer.save()
-            response_data = {"message": "Login Successful", "tokens": tokens}
-            return Response(data=response_data, status=status.HTTP_200_OK)
+            response_data = {"message": "Login Successful",
+                            "tokens": tokens}
+            return Response(data=response_data,
+                            status=status.HTTP_200_OK)
         else:
-            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data=serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
     def get(self, request: Request):
-        content = {"user": str(request.user), "auth": str(request.auth)}
+        content = {"user": str(request.user),
+                   "auth": str(request.auth)}
         return Response(data=content, status=status.HTTP_200_OK)
-    
-    
+
 
 class PasswordChangeView(APIView):
     permission_classes = [IsAuthenticated]
@@ -56,23 +63,60 @@ class PasswordChangeView(APIView):
 
             # Check if the old password is correct
             if not user.check_password(old_password):
-                return Response({'detail': 'Incorrect old password.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': 'Incorrect old password.'},
+                                status=status.HTTP_400_BAD_REQUEST)
 
             if new_password == old_password:
                 return Response({
-                    'detail':'Passwords Must be Different'
+                    'detail': 'Passwords Must be Different'
                 },
-                                status=status.HTTP_400_BAD_REQUEST)
+                    status=status.HTTP_400_BAD_REQUEST)
             # Set the new password and save the user
             user.set_password(new_password)
             user.save()
 
             # Issue a new JWT token
             refresh = RefreshToken.for_user(user)
-            tokens = {"refresh": str(refresh), "access": str(refresh.access_token)}
+            tokens = {"refresh": str(refresh), "access": str(
+                refresh.access_token)}
 
             # Update the session authentication hash
             update_session_auth_hash(request, user)
 
-            return Response({'detail': 'Password changed successfully.', 'tokens': tokens}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Password changed successfully.',
+                            'tokens': tokens}, status=status.HTTP_200_OK)
+        return Response(serializer.errors,
+                        status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # If using JWT tokens
+        refresh_token = request.data.get('access')
+
+        if refresh_token:
+            try:
+                # Blacklist the refresh token
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+
+                return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'No refresh token provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+class DeleteAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        user.delete()
+        return Response(
+            {
+                "message": "Account has been Deleted!"
+            },
+            status=status.HTTP_204_NO_CONTENT
+        )

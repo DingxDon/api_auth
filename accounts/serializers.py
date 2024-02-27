@@ -74,3 +74,16 @@ class PasswordChangeSerializer(serializers.Serializer):
             raise serializers.ValidationError("The new passwords do not match.")
 
         return attrs
+    
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    
+    def validate_email(self, value):
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email Address Does not exist!")
+        
+    def save(self):
+        email = self
+        
+class DeleteAccountSerializer(serializers.Serializer):
+    confirmation = serializers.BooleanField(required=True)

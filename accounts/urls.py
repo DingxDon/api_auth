@@ -1,19 +1,27 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from . import views
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
     TokenVerifyView
 )
-from .views import PasswordChangeView
+from .views import PasswordChangeView, LogoutView, DeleteAccountView
+
 
 
 urlpatterns = [
-    path("signup/", views.SignUpView.as_view(), name="signup"),
-    path("login/", views.LoginView.as_view(), name="login"),
-    path("jwt/create/", TokenObtainPairView.as_view(), name="jwt_create"),
-    path("jwt/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("jwt/verify/", TokenVerifyView.as_view(), name="token_verify"),
-    path('jwt/password/change/', PasswordChangeView.as_view(), name='password_change'),
+    path('admin/', admin.site.urls),
+    path("account/", include([
+        path("signup/", views.SignUpView.as_view(), name="signup"),
+        path("login/", views.LoginView.as_view(), name="login"),
+        path("logout/", views.LogoutView.as_view(), name="logout"),
+        path("password/change/", views.PasswordChangeView.as_view(), name="password_change"),
+        path("delete-account/", views.DeleteAccountView.as_view(), name="delete_account"),
+        path("jwt/", include([
+            path("create/", TokenObtainPairView.as_view(), name="jwt_create"),
+            path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+            path("verify/", TokenVerifyView.as_view(), name="token_verify"),
+        ])),
+    ])),
 ]

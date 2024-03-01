@@ -1,12 +1,12 @@
 from django.contrib.auth import authenticate, login
-from django.shortcuts import render
 from django.shortcuts import render, redirect
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .tokens import create_jwt_pair
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt import token_blacklist
 from django.contrib.auth import update_session_auth_hash
 from rest_framework.permissions import IsAuthenticated
 from .serializers import SignUpSerializer, LoginSerializer, PasswordChangeSerializer
@@ -89,18 +89,20 @@ class PasswordChangeView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
+#Does NOT WORK
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (permissions.AllowAny,)
+    authentication_classes = ()
 
     def post(self, request):
         # If using JWT tokens
-        refresh_token = request.data.get('access')
+        refresh_token = request.data['refresh']
 
         if refresh_token:
             try:
                 # Blacklist the refresh token
                 token = RefreshToken(refresh_token)
-                token.blacklist()
+                token.verify_token_type()
 
                 return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
             except Exception as e:
@@ -120,3 +122,11 @@ class DeleteAccountView(APIView):
             },
             status=status.HTTP_204_NO_CONTENT
         )
+
+
+def Login_View(request):
+    return render(request, 'loginpage.html')
+
+def Register_view(request):
+    return render(request, 'register.html')
+

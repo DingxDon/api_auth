@@ -95,15 +95,11 @@ class LogoutView(APIView):
     authentication_classes = ()
 
     def post(self, request):
-        # If using JWT tokens
-        refresh_token = request.data['refresh']
-
+        refresh_token = request.data.get('refresh')
         if refresh_token:
             try:
-                # Blacklist the refresh token
                 token = RefreshToken(refresh_token)
-                token.verify_token_type()
-
+                token.blacklist()
                 return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
             except Exception as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -130,3 +126,9 @@ def Login_View(request):
 def Register_view(request):
     return render(request, 'register.html')
 
+def Home_View(request):
+    return render(request, 'homepage.html')
+
+# password reset
+# otp
+# email conformation

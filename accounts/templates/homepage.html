@@ -2,9 +2,12 @@
 
 {% block content %}
 
-<h1> HomePage</h1>
-<p>Welcome, {{ user.username }}</p>
-<p>Email: {{ user.email }}</p>
-
+<h1>HomePage</h1>
+{% if user.is_authenticated %}
+  <p>Welcome, {{ user.username }}</p>
+  <p>Email: {{ user.email }}</p>
+{% else %}
+  <p>Welcome, Guest</p>
+{% endif %}
 
 {% endblock %}

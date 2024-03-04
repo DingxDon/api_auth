@@ -38,7 +38,7 @@ class LoginView(APIView):
         if serializer.is_valid():
             tokens = serializer.save()
             response_data = {"message": "Login Successful",
-                            "tokens": tokens}
+                             "tokens": tokens}
             return Response(data=response_data,
                             status=status.HTTP_200_OK)
         else:
@@ -89,7 +89,6 @@ class PasswordChangeView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-#Does NOT WORK
 class LogoutView(APIView):
     permission_classes = (permissions.AllowAny,)
     authentication_classes = ()
@@ -101,10 +100,13 @@ class LogoutView(APIView):
                 token = RefreshToken(refresh_token)
                 token.blacklist()
                 return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
+            except token_blacklist.exceptions.BlacklistError:
+                return Response({'error': 'Token is already blacklisted.'}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'No refresh token provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class DeleteAccountView(APIView):
     permission_classes = [IsAuthenticated]
@@ -120,11 +122,15 @@ class DeleteAccountView(APIView):
         )
 
 
+
+
 def Login_View(request):
     return render(request, 'loginpage.html')
 
+
 def Register_view(request):
     return render(request, 'register.html')
+
 
 def Home_View(request):
     return render(request, 'homepage.html')

@@ -10,29 +10,28 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-
     email = serializers.EmailField(max_length=80, validators=[UniqueValidator(queryset=User.objects.all())])
-    username = serializers.CharField(max_length=45)
+    username = serializers.CharField(max_length=150)
     password = serializers.CharField(min_length=8, write_only=True)
+    date_of_birth = serializers.DateField(required=False, allow_null=True)
+    location = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    bio = serializers.CharField(max_length=500, required=False, allow_blank=True)
+    profile_picture = serializers.ImageField(required=False, allow_null=True)
+    website = serializers.URLField(required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['email', 'username', 'password']
-
-    def validate(self, attrs):
-        email_exists = User.objects.filter(email=attrs['email']).exists()
-        if email_exists:
-            raise ValidationError("Email has already been used")
-        return super().validate(attrs)
+        fields = ['email', 'username', 'password', 'date_of_birth', 'location', 'bio', 'profile_picture', 'website']
 
     def create(self, validated_data):
         password = validated_data.pop("password")
         user =  super().create(validated_data)
         user.set_password(password)
         user.save()
-        #Token Implementation
+        # Token Implementation
         Token.objects.create(user=user)
         return user
+
     
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -51,14 +50,19 @@ class LoginSerializer(serializers.Serializer):
 
         return super().validate(attrs)
 
-    def create(self, validated_data):
+    """def create(self, validated_data):
         user = authenticate(
             email=validated_data.get("email"),
             password=validated_data.get("password")
         )
         refresh = RefreshToken.for_user(user)
         tokens = {"refresh": str(refresh), "access": str(refresh.access_token)}
-        return tokens
+        return tokens"""
+        
+        
+    def validate_email(self, value):
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Account Does not Exist!")
     
     
 class PasswordChangeSerializer(serializers.Serializer):
@@ -87,3 +91,7 @@ class PasswordResetSerializer(serializers.Serializer):
         
 class DeleteAccountSerializer(serializers.Serializer):
     confirmation = serializers.BooleanField(required=True)
+    
+    def delete_account(self):
+        user = self.context['request'].user
+        user.delete()

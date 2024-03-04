@@ -30,6 +30,12 @@ class User(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     username = models.CharField(_('username'), max_length=150, unique=True)
     date_of_birth = models.DateField(_('date of birth'), null=True, blank=True)
+    location = models.CharField(_('location'), max_length=100, blank=True, null=True)
+    bio = models.TextField(_('bio'), blank=True)
+    profile_picture = models.ImageField(_('profile picture'), upload_to='profile_pictures/', blank=True, null=True)
+    website = models.URLField(_('website'), blank=True)
+
+    is_active = models.BooleanField(_("is active"), default=True)
 
     objects = CustomUserManager()
     USERNAME_FIELD = "email"
@@ -38,5 +44,6 @@ class User(AbstractUser):
     class Meta:
         verbose_name = _('user')
         verbose_name_plural = _('users')
+
     def __str__(self):
         return self.username
